@@ -12,7 +12,6 @@ class Women(models.Model):
     is_published = models.BooleanField(default=True, verbose_name="Публикация")
     cat = models.ForeignKey('Category', on_delete=models.PROTECT, verbose_name="Категории")
 
-
     def __str__(self):
         return self.title
 
