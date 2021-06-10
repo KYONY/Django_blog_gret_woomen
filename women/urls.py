@@ -1,6 +1,7 @@
 from django.urls import path, re_path
 from django.views.decorators.cache import cache_page
 
+
 from .views import *
 
 urlpatterns = [
@@ -13,6 +14,9 @@ urlpatterns = [
     path('post/<slug:post_slug>/', ShowPost.as_view(), name='post'),
     path('category/<slug:cat_slug>/', WomenCategory.as_view(extra_context={'title': "Список по категориям"}), name='category'),
     path('logout/', logout_user, name='logout'),
+    path('favorites/', favourite_list, name='favourite_list'),
+    path('fav/<int:id>', favourite_add, name='favourite_add'),
+
 
     # path('contact/', contact, name='contact'),
     # path('', cache_page(60)(WomenHome.as_view()), name='home'),

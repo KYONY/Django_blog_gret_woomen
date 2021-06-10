@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
 
@@ -11,6 +12,8 @@ class Women(models.Model):
     time_update = models.DateTimeField(auto_now=True, verbose_name="Время изменения")
     is_published = models.BooleanField(default=True, verbose_name="Публикация")
     cat = models.ForeignKey('Category', on_delete=models.PROTECT, verbose_name="Категории")
+    favourites = models.ManyToManyField(User, related_name='favourite', default=None, blank=True)
+    
 
     def __str__(self):
         return self.title
@@ -41,3 +44,20 @@ class Category(models.Model):
 
     def get_absolute_url(self):
         return reverse('category', kwargs={'cat_slug': self.slug})
+    
+
+class Author(models.Model):
+    name = models.CharField(max_length=150, db_index=True, verbose_name="Автор", blank=True, default="Anonymous")
+    slug = models.SlugField(max_length=255, unique=True, db_index=True, verbose_name='Auth Slug')
+
+    class Meta:
+        verbose_name = 'Автор'
+        verbose_name_plural = 'Авторы'
+        ordering = ['id']
+
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('author', kwargs={'author_slug': self.slug})

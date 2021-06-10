@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
-from django.http import HttpResponse, HttpResponseNotFound, Http404
+from django.http import HttpResponse, HttpResponseNotFound, Http404, HttpResponseRedirect, request
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, FormView
@@ -15,19 +15,15 @@ from .utils import *
 
 
 class WomenHome(DataMixin, ListView):
-    # paginate_by = 3
+    paginate_by = 3
     model = Women
     template_name = 'women/index.html'
     context_object_name = 'posts'
 
-    # extra_context = {'title': 'Главная страница'}
-
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Главная страница")
-        # context['menu'] = menu
-        # context['title'] = 'Главная страница'
-        # context['cat_selected'] = 0
+
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
@@ -44,8 +40,7 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Добавление статьи")
-        # context['title'] = 'Добавление статьи'
-        # context['menu'] = menu
+
         return dict(list(context.items()) + list(c_def.items()))
 
 
@@ -56,11 +51,11 @@ class ShowPost(DataMixin, DetailView):
     slug_url_kwarg = 'post_slug'
     context_object_name = 'post'
 
+
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title=context['post'])
-        # context['title'] = context['post']
-        # context['nemu'] = menu
+
         return dict(list(context.items()) + list(c_def.items()))
 
 
@@ -78,22 +73,13 @@ class WomenCategory(DataMixin, ListView):
         c_def = self.get_user_context(title='Категория - ' + str(c.name),
                                       cat_selected=c.pk)
 
-        # context['title'] = 'Категория - ' + str(context['posts'][0].cat)
-        # context['menu'] = menu
-        # context['cat_selected'] = context['posts'][0].cat_id
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
         return Women.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True).select_related('cat')
 
-# @login_required
-def about(request):
-    contact_list = Women.objects.all()
-    paginator = Paginator(contact_list, 3)
 
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    return render(request, 'women/about.html', {'page_obj': page_obj, 'menu': menu, 'title': 'О сайте'})
+
 
 
 class RegisterUser(DataMixin, CreateView):
@@ -128,10 +114,6 @@ class LoginUser(DataMixin, LoginView):
 
 
 
-
-# def contact(request):
-#     return HttpResponse("Обратная связь")
-
 class ContactFormView(DataMixin, FormView):
     form_class = ContactForm
     template_name = 'women/contact.html'
@@ -146,8 +128,6 @@ class ContactFormView(DataMixin, FormView):
         print(form.cleaned_data)
         return redirect('home')
 
-# def login(request):
-#     return HttpResponse("Авторизация")
 
 def logout_user(request):
     logout(request)
@@ -155,6 +135,36 @@ def logout_user(request):
 
 def pageNotFound(request, exception):
 	return HttpResponseNotFound('<h1>Страница не найдена</h1>')
+
+
+def favourite_list(request):
+    new = Women.objects.filter(favourites=request.user)
+
+    return render(request, 'women/favourites.html', {'new': new, 'menu': menu, 'title': 'Избранное'})
+
+
+@login_required()
+def favourite_add(request, id):
+    women = get_object_or_404(Women, id=id)
+
+    if women.favourites.filter(id=request.user.id).exists():
+        women.favourites.remove(request.user)
+    else:
+        women.favourites.add(request.user)
+    return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
+
+
+# @login_required
+def about(request):
+    contact_list = Women.objects.all()
+    paginator = Paginator(contact_list, 3)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'women/about.html', {'page_obj': page_obj, 'menu': menu, 'title': 'О сайте', })
+
+
 
 # def show_post(request, post_slug):
 #     post = get_object_or_404(Women, slug=post_slug)
